@@ -12,6 +12,10 @@
 
 ## 安装
 
+### 下载预编译版本
+
+从 [Releases](https://github.com/yourusername/app-assets-generator/releases) 页面下载适合你操作系统的预编译版本。
+
 ### 从源码构建
 
 ```bash
@@ -251,6 +255,33 @@ android:
   min_sdk_version: 21
 ```
 
+## 自动发布
+
+本项目使用 GitHub Actions 自动构建和发布 Release。
+
+### 触发方式
+
+#### 1. 通过 Git 标签触发（推荐）
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+#### 2. 手动触发
+
+在 GitHub 仓库的 Actions 页面手动运行 workflow，输入版本号如 `v1.0.0`
+
+### 功能特性
+
+- **多平台构建**：自动构建 6 个平台的二进制文件（macOS、Linux、Windows 的 x64 和 ARM64 版本）
+- **自动打包**：每个平台的文件会与 README、LICENSE 和示例配置一起打包成 tar.gz
+- **SHA256 校验**：自动生成所有文件的校验和
+- **自动发布**：创建 GitHub Release 并上传所有构建产物
+- **版本管理**：支持通过 Git 标签或手动输入版本号
+
+workflow 会自动完成构建、打包、生成校验和并创建 release，整个过程无需人工干预。
+
 ## 开发
 
 ### 项目结构
@@ -272,6 +303,9 @@ app-assets-generator/
 │   │   ├── ios.go      # iOS图片生成
 │   │   └── android.go  # Android图片生成
 │   └── utils/          # 工具函数
+├── .github/            
+│   └── workflows/      
+│       └── release.yml # GitHub Actions 自动发布配置
 ├── colors.yaml         # 颜色配置示例
 └── icons/              # 图标资源示例
 ```

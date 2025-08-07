@@ -1,0 +1,202 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # 触发条件：推送v开头的标签（如v1.0.0）
+  workflow_dispatch:  # 允许手动触发
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        include:
+          - goos: darwin
+            goarch: amd64
+            suffix: darwin-amd64
+          - goos: darwin
+            goarch: arm64
+            suffix: darwin-arm64
+          - goos: linux
+            goarch: amd64
+            suffix: linux-amd64
+          - goos: linux
+            goarch: arm64
+            suffix: linux-arm64
+          - goos: windows
+            goarch: amd64
+            suffix: windows-amd64.exe
+          - goos: windows
+            goarch: arm64
+            suffix: windows-arm64.exe
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+      
+      - name: Get version
+        id: get_version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION=${GITHUB_REF#refs/tags/}
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building version: $VERSION"
+      
+      - name: Download dependencies
+        run: |
+          go mod download
+          go mod tidy
+      
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: |
+          VERSION=${{ steps.get_version.outputs.VERSION }}
+          OUTPUT="app-assets-generator-${{ matrix.suffix }}"
+          
+          go build \
+            -ldflags="-s -w -X 'app-assets-generator/cmd.version=${VERSION}'" \
+            -o "${OUTPUT}" \
+            main.go
+          
+          # 显示文件信息
+          ls -lh "${OUTPUT}"
+      
+      - name: Create archive
+        run: |
+          OUTPUT="app-assets-generator-${{ matrix.suffix }}"
+          ARCHIVE="app-assets-generator-${{ matrix.suffix }}.tar.gz"
+          
+          # 创建临时目录
+          mkdir -p release-temp
+          
+          # 复制文件到临时目录
+          cp "${OUTPUT}" release-temp/
+          cp README.md release-temp/
+          cp LICENSE release-temp/
+          cp colors.yaml release-temp/colors-example.yaml
+          
+          # 创建压缩包
+          tar -czf "${ARCHIVE}" -C release-temp .
+          
+          # 清理
+          rm -rf release-temp
+          
+          echo "Created archive: ${ARCHIVE}"
+          ls -lh "${ARCHIVE}"
+      
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-assets-generator-${{ matrix.suffix }}
+          path: app-assets-generator-${{ matrix.suffix }}.tar.gz
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # 需要写权限来创建release
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Get version
+        id: get_version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION=${GITHUB_REF#refs/tags/}
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Creating release for version: $VERSION"
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+      
+      - name: Prepare release files
+        run: |
+          mkdir -p release-files
+          
+          # 移动所有压缩包到release-files目录
+          for dir in artifacts/*; do
+            if [ -d "$dir" ]; then
+              mv "$dir"/*.tar.gz release-files/ || true
+            fi
+          done
+          
+          # 列出所有文件
+          echo "Release files:"
+          ls -lh release-files/
+      
+      - name: Generate checksums
+        run: |
+          cd release-files
+          sha256sum *.tar.gz > checksums.txt
+          echo "Checksums:"
+          cat checksums.txt
+          cd ..
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.get_version.outputs.VERSION }}
+          name: Release ${{ steps.get_version.outputs.VERSION }}
+          body: |
+            ## App Assets Generator ${{ steps.get_version.outputs.VERSION }}
+            
+            ### 📦 下载说明
+            
+            根据你的操作系统选择对应的文件：
+            
+            - **macOS Intel**: `app-assets-generator-darwin-amd64.tar.gz`
+            - **macOS Apple Silicon**: `app-assets-generator-darwin-arm64.tar.gz`
+            - **Linux x64**: `app-assets-generator-linux-amd64.tar.gz`
+            - **Linux ARM64**: `app-assets-generator-linux-arm64.tar.gz`
+            - **Windows x64**: `app-assets-generator-windows-amd64.exe.tar.gz`
+            - **Windows ARM64**: `app-assets-generator-windows-arm64.exe.tar.gz`
+            
+            ### 🔐 文件校验
+            
+            下载后可以使用 `checksums.txt` 文件验证文件完整性：
+            
+            ```bash
+            sha256sum -c checksums.txt
+            ```
+            
+            ### 📝 更新内容
+            
+            请查看 [CHANGELOG](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)
+            
+            ### 🚀 快速开始
+            
+            1. 下载对应平台的压缩包
+            2. 解压文件：`tar -xzf app-assets-generator-<platform>.tar.gz`
+            3. 运行程序：`./app-assets-generator --help`
+            
+            详细使用说明请参考 [README](https://github.com/${{ github.repository }}/blob/main/README.md)
+          files: |
+            release-files/*.tar.gz
+            release-files/checksums.txt
+          draft: false
+          prerelease: false
+          generate_release_notes: true  # 自动生成发布说明
