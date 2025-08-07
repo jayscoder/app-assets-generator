@@ -1,0 +1,109 @@
+# ================================
+# Base Colors - 基础颜色
+# ================================
+
+# Black - 黑色
+color_black:
+  default:
+    hex: "#000000"
+    alpha: 1.0
+  light:
+    hex: "#000000"
+    alpha: 1.0
+  dark:
+    hex: "#000000"
+    alpha: 1.0
+
+# ================================
+# Black Masks - 黑色遮罩
+# ================================
+color_black_mask_0:
+  default:
+    hex: "#000000"
+    alpha: 0.0
+  light:
+    hex: "#000000"
+    alpha: 0.0
+  dark:
+    hex: "#000000"
+    alpha: 0.0
+color_black_mask_10:
+  default:
+    hex: "#000000"
+    alpha: 0.102
+  light:
+    hex: "#000000"
+    alpha: 0.102
+  dark:
+    hex: "#000000"
+    alpha: 0.102
+color_black_mask_100:
+  default:
+    hex: "#000000"
+    alpha: 1.0
+  light:
+    hex: "#000000"
+    alpha: 1.0
+  dark:
+    hex: "#000000"
+    alpha: 1.0
+color_black_mask_100_themed:
+  default:
+    hex: "#000000"
+    alpha: 1.0
+  light:
+    hex: "#000000"
+    alpha: 1.0
+  dark:
+    hex: "#ffffff"
+    alpha: 1.0
+color_black_mask_10_themed:
+  default:
+    hex: "#000000"
+    alpha: 0.102
+  light:
+    hex: "#000000"
+    alpha: 0.102
+  dark:
+    hex: "#ffffff"
+    alpha: 0.102
+color_black_mask_20:
+  default:
+    hex: "#000000"
+    alpha: 0.2
+  light:
+    hex: "#000000"
+    alpha: 0.2
+  dark:
+    hex: "#000000"
+    alpha: 0.2
+color_black_mask_20_themed:
+  default:
+    hex: "#000000"
+    alpha: 0.2
+  light:
+    hex: "#000000"
+    alpha: 0.2
+  dark:
+    hex: "#ffffff"
+    alpha: 0.2
+color_black_mask_50:
+  default:
+    hex: "#000000"
+    alpha: 0.502
+  light:
+    hex: "#000000"
+    alpha: 0.502
+  dark:
+    hex: "#000000"
+    alpha: 0.502
+color_black_mask_50_themed:
+  default:
+    hex: "#000000"
+    alpha: 0.502
+  light:
+    hex: "#000000"
+    alpha: 0.502
+  dark:
+    hex: "#ffffff"
+    alpha: 0.502
